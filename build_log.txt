@@ -1,0 +1,2 @@
+Latest version of cyberdrop-dl-patched: 5.4.27
+Docker image for version 5.4.27 already exists on Docker Hub. No need to rebuild.
