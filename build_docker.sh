@@ -97,3 +97,4 @@ else
     log "Failed to push the Docker image as latest."
     exit 1
 fi
+
