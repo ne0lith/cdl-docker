@@ -7,6 +7,9 @@ WEBHOOK_URL=${DISCORD_WEBHOOK_URL}
 # Hard-coded Docker repository
 DOCKER_REPO="ne0lith/cdl-docker"
 
+# Dockerimage variant
+VARIANT="3.11-alpine"
+
 # Check if the required environment variable is set
 if [ -z "$WEBHOOK_URL" ]; then
     echo "Error: DISCORD_WEBHOOK_URL environment variable is not set."
