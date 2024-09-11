@@ -1,7 +1,15 @@
 #!/bin/bash
 
-# Define the path to the secret file
-SECRET_FILE="secrets.env"
+# Load secrets from secrets.env file
+if [ -f secrets.env ]; then
+    source secrets.env
+else
+    echo "Error: secrets.env file not found."
+    exit 1
+fi
+
+# Ensure the DISCORD_WEBHOOK_URL is set from the secrets file
+WEBHOOK_URL=${DISCORD_WEBHOOK_URL}
 
 # Hard-coded Docker repository
 DOCKER_REPO="ne0lith/cdl-docker"
@@ -9,18 +17,9 @@ DOCKER_REPO="ne0lith/cdl-docker"
 # Docker image variant
 VARIANT="3.11-alpine"
 
-# Check if the secret file exists
-if [ ! -f "$SECRET_FILE" ]; then
-    echo "Error: Secret file $SECRET_FILE not found."
-    exit 1
-fi
-
-# Load the secret from the file
-source $SECRET_FILE
-
-# Ensure the WEBHOOK_URL is set in the secrets file
+# Check if the required environment variable is set
 if [ -z "$WEBHOOK_URL" ]; then
-    echo "Error: WEBHOOK_URL is not set in $SECRET_FILE."
+    echo "Error: DISCORD_WEBHOOK_URL is not set in secrets.env."
     exit 1
 fi
 
@@ -73,3 +72,38 @@ log "Building Docker image for version $VERSION..."
 
 # Build the Docker image with the specified version
 docker build --build-arg CYBERDROP_DL_VERSION=$VERSION -t $DOCKER_REPO:$VERSION .
+
+# Check if the image was built successfully
+if [ $? -eq 0 ]; then
+    log "Docker image built and tagged as $DOCKER_REPO:$VERSION"
+else
+    log "Failed to build the Docker image."
+    exit 1
+fi
+
+# Push the version-specific tag to the Docker repository
+docker push $DOCKER_REPO:$VERSION
+
+# Check if the push was successful
+if [ $? -eq 0 ]; then
+    log "Docker image pushed as $DOCKER_REPO:$VERSION"
+    send_discord_notification "Docker image $DOCKER_REPO:$VERSION has been successfully pushed."
+else
+    log "Failed to push the Docker image."
+    exit 1
+fi
+
+# Tag the image as latest
+docker tag $DOCKER_REPO:$VERSION $DOCKER_REPO:latest
+
+# Push the latest tag to the Docker repository
+docker push $DOCKER_REPO:latest
+
+# Check if the push was successful
+if [ $? -eq 0 ]; then
+    log "Docker image pushed as $DOCKER_REPO:latest"
+    send_discord_notification "Docker image $DOCKER_REPO:latest has been successfully pushed."
+else
+    log "Failed to push the Docker image as latest."
+    exit 1
+fi
