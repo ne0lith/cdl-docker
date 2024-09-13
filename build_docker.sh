@@ -15,10 +15,12 @@ WEBHOOK_URL=${DISCORD_WEBHOOK_URL}
 DOCKER_REPO="ne0lith/cdl-docker"
 
 # Docker image variant
+# Currently not implemented
 VARIANT="3.11-alpine"
 
 # List of excluded versions
-EXCLUDED_VERSIONS=("5.6.1") # Add versions to exclude here
+# These are known broken versions
+EXCLUDED_VERSIONS=("5.4.70" "5.6.1")
 
 # Check if the required environment variable is set
 if [ -z "$WEBHOOK_URL" ]; then
