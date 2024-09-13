@@ -78,6 +78,12 @@ fi
 
 log "Latest version of cyberdrop-dl-patched: $VERSION"
 
+# Check if the version is excluded
+if is_version_excluded "$VERSION"; then
+    log "Version $VERSION is excluded and will not be built or pushed."
+    exit 0
+fi
+
 # Check if the image with this version already exists on Docker Hub
 if [ "$(image_exists_on_dockerhub $VERSION)" == "$VERSION" ]; then
     log "Docker image for version $VERSION already exists on Docker Hub. No need to rebuild."
@@ -109,22 +115,17 @@ else
     exit 1
 fi
 
-# Only tag the image as latest if it's not in the excluded versions list
-if is_version_excluded "$VERSION"; then
-    log "Version $VERSION is excluded from being tagged as latest."
+# Tag the image as latest
+docker tag $DOCKER_REPO:$VERSION $DOCKER_REPO:latest
+
+# Push the latest tag to the Docker repository
+docker push $DOCKER_REPO:latest
+
+# Check if the push was successful
+if [ $? -eq 0 ]; then
+    log "Docker image pushed as $DOCKER_REPO:latest"
+    send_discord_notification "Docker image $DOCKER_REPO:latest has been successfully pushed."
 else
-    # Tag the image as latest
-    docker tag $DOCKER_REPO:$VERSION $DOCKER_REPO:latest
-
-    # Push the latest tag to the Docker repository
-    docker push $DOCKER_REPO:latest
-
-    # Check if the push was successful
-    if [ $? -eq 0 ]; then
-        log "Docker image pushed as $DOCKER_REPO:latest"
-        send_discord_notification "Docker image $DOCKER_REPO:latest has been successfully pushed."
-    else
-        log "Failed to push the Docker image as latest."
-        exit 1
-    fi
+    log "Failed to push the Docker image as latest."
+    exit 1
 fi
