@@ -17,6 +17,9 @@ DOCKER_REPO="ne0lith/cdl-docker"
 # Docker image variant
 VARIANT="3.11-alpine"
 
+# List of excluded versions
+EXCLUDED_VERSIONS=("5.6.1") # Add versions to exclude here
+
 # Check if the required environment variable is set
 if [ -z "$WEBHOOK_URL" ]; then
     echo "Error: DISCORD_WEBHOOK_URL is not set in secrets.env."
@@ -49,6 +52,17 @@ get_latest_version() {
 image_exists_on_dockerhub() {
     local tag=$1
     curl -s "https://hub.docker.com/v2/repositories/$DOCKER_REPO/tags/$tag/" | jq -r '.name' 2>/dev/null
+}
+
+# Function to check if a version is excluded
+is_version_excluded() {
+    local version=$1
+    for excluded_version in "${EXCLUDED_VERSIONS[@]}"; do
+        if [ "$version" == "$excluded_version" ]; then
+            return 0
+        fi
+    done
+    return 1
 }
 
 # Retrieve the latest version
@@ -93,17 +107,22 @@ else
     exit 1
 fi
 
-# Tag the image as latest
-docker tag $DOCKER_REPO:$VERSION $DOCKER_REPO:latest
-
-# Push the latest tag to the Docker repository
-docker push $DOCKER_REPO:latest
-
-# Check if the push was successful
-if [ $? -eq 0 ]; then
-    log "Docker image pushed as $DOCKER_REPO:latest"
-    send_discord_notification "Docker image $DOCKER_REPO:latest has been successfully pushed."
+# Only tag the image as latest if it's not in the excluded versions list
+if is_version_excluded "$VERSION"; then
+    log "Version $VERSION is excluded from being tagged as latest."
 else
-    log "Failed to push the Docker image as latest."
-    exit 1
+    # Tag the image as latest
+    docker tag $DOCKER_REPO:$VERSION $DOCKER_REPO:latest
+
+    # Push the latest tag to the Docker repository
+    docker push $DOCKER_REPO:latest
+
+    # Check if the push was successful
+    if [ $? -eq 0 ]; then
+        log "Docker image pushed as $DOCKER_REPO:latest"
+        send_discord_notification "Docker image $DOCKER_REPO:latest has been successfully pushed."
+    else
+        log "Failed to push the Docker image as latest."
+        exit 1
+    fi
 fi
