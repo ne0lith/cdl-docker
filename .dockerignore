@@ -2,3 +2,5 @@ build_docker.sh
 build_log.txt
 README.md
 secrets.env
+dockerfile.dev
+
