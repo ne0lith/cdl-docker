@@ -2,3 +2,4 @@ build_log.txt
 dockerfile.experimental.save
 secrets.env
 dockerfile.dev
+build_docker_dev.sh
