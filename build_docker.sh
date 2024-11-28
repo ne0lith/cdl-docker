@@ -18,7 +18,6 @@ DOCKER_REPO="ne0lith/cdl-docker"
 VARIANT="3.11-alpine"
 
 # List of excluded versions
-# These are known broken versions
 EXCLUDED_VERSIONS=("5.4.70" "5.6.1" "5.7.2.post0" "5.7.2.post1")
 
 # Check if the required environment variable is set
