@@ -15,7 +15,6 @@ WEBHOOK_URL=${DISCORD_WEBHOOK_URL}
 DOCKER_REPO="ne0lith/cdl-docker"
 
 # Docker image variant
-# Currently not implemented
 VARIANT="3.11-alpine"
 
 # List of excluded versions
