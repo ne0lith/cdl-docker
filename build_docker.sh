@@ -20,7 +20,7 @@ VARIANT="3.11-alpine"
 
 # List of excluded versions
 # These are known broken versions
-EXCLUDED_VERSIONS=("5.4.70" "5.6.1" "5.7.2.post1" "5.7.2.post0")
+EXCLUDED_VERSIONS=("5.4.70" "5.6.1")
 
 # Check if the required environment variable is set
 if [ -z "$WEBHOOK_URL" ]; then
@@ -85,6 +85,12 @@ log "Latest version of cyberdrop-dl-patched: $VERSION"
 # Check if the version is excluded
 if is_version_excluded "$VERSION"; then
     log "Version $VERSION is excluded and will not be built or pushed."
+    exit 0
+fi
+
+# Check if the image with this version already exists on Docker Hub
+if [ "$(image_exists_on_dockerhub $VERSION)" == "$VERSION" ]; then
+    log "Docker image for version $VERSION already exists on Docker Hub. No need to rebuild."
     exit 0
 fi
 
