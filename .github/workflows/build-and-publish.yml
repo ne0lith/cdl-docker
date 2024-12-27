@@ -41,6 +41,7 @@ jobs:
           else
             echo "New release detected!"
             echo "new_release=true" >> $GITHUB_ENV
+          fi
 
       - name: Stop if no new release
         if: env.new_release == 'false'
@@ -73,7 +74,6 @@ jobs:
           DOCKERHUB_IMAGE="ne0lith/cdl-docker"
           GHCR_IMAGE="ghcr.io/${{ github.repository_owner }}/cdl-docker"
 
-          # Multi-platform build for both amd64 and arm64
           docker buildx build \
             --platform linux/amd64,linux/arm64 \
             --build-arg CYBERDROP_DL_VERSION=$CYBERDROP_DL_VERSION \
