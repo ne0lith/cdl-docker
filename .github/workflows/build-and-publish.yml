@@ -46,18 +46,12 @@ jobs:
           DOCKERHUB_IMAGE="ne0lith/cdl-docker"
           GHCR_IMAGE="ghcr.io/${{ github.repository_owner }}/cdl-docker"
 
+          # Multi-platform build for both amd64 and arm64
           docker buildx build \
-            --platform linux/amd64 \
+            --platform linux/amd64,linux/arm64 \
             --build-arg CYBERDROP_DL_VERSION=$CYBERDROP_DL_VERSION \
             --tag $DOCKERHUB_IMAGE:latest \
             --tag $DOCKERHUB_IMAGE:$CYBERDROP_DL_VERSION \
             --tag $GHCR_IMAGE:latest \
             --tag $GHCR_IMAGE:$CYBERDROP_DL_VERSION \
-            --push .
-
-          docker buildx build \
-            --platform linux/arm64 \
-            --build-arg CYBERDROP_DL_VERSION=$CYBERDROP_DL_VERSION \
-            --tag $DOCKERHUB_IMAGE:arm64-$CYBERDROP_DL_VERSION \
-            --tag $GHCR_IMAGE:arm64-$CYBERDROP_DL_VERSION \
             --push .
