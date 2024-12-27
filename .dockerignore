@@ -4,4 +4,6 @@ build_log.txt
 README.md
 secrets.env
 dockerfile.dev
+dockerfile.arm64
+build_docker_arm64.sh
 
