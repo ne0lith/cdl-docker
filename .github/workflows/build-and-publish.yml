@@ -37,9 +37,16 @@ jobs:
           if [ "$CURRENT_VERSION" = "$CYBERDROP_DL_VERSION" ]; then
             echo "No new release to publish."
             echo "new_release=false" >> $GITHUB_ENV
+            exit 0
           else
             echo "New release detected!"
             echo "new_release=true" >> $GITHUB_ENV
+
+      - name: Stop if no new release
+        if: env.new_release == 'false'
+        run: |
+          echo "No new release. Exiting gracefully."
+          exit 0
 
       - name: Set up Docker Buildx
         if: env.new_release == 'true'
