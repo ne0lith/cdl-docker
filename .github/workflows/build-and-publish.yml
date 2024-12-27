@@ -68,7 +68,20 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build and push Docker images
+      - name: Build and push versioned Docker image
+        if: env.new_release == 'true'
+        run: |
+          DOCKERHUB_IMAGE="ne0lith/cdl-docker"
+          GHCR_IMAGE="ghcr.io/${{ github.repository_owner }}/cdl-docker"
+
+          docker buildx build \
+            --platform linux/amd64,linux/arm64 \
+            --build-arg CYBERDROP_DL_VERSION=$CYBERDROP_DL_VERSION \
+            --tag $DOCKERHUB_IMAGE:$CYBERDROP_DL_VERSION \
+            --tag $GHCR_IMAGE:$CYBERDROP_DL_VERSION \
+            --push .
+
+      - name: Push latest Docker tag
         if: env.new_release == 'true'
         run: |
           DOCKERHUB_IMAGE="ne0lith/cdl-docker"
@@ -78,10 +91,9 @@ jobs:
             --platform linux/amd64,linux/arm64 \
             --build-arg CYBERDROP_DL_VERSION=$CYBERDROP_DL_VERSION \
             --tag $DOCKERHUB_IMAGE:latest \
-            --tag $DOCKERHUB_IMAGE:$CYBERDROP_DL_VERSION \
             --tag $GHCR_IMAGE:latest \
-            --tag $GHCR_IMAGE:$CYBERDROP_DL_VERSION \
             --push .
+
 
       - name: Notify Discord
         if: env.new_release == 'true'
@@ -92,3 +104,4 @@ jobs:
           curl -X POST -H "Content-Type: application/json" \
           -d "{\"content\": \"✅ New Docker image build pushed! Version: $LATEST_VERSION\"}" \
           $DISCORD_WEBHOOK_URL
+
