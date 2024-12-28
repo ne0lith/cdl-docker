@@ -1,1 +1,5 @@
 .legacy
+.git
+.github
+.gitignore
+.dockerignore
