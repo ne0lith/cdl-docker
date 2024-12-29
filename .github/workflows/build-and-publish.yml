@@ -31,17 +31,29 @@ jobs:
         id: check-release
         run: |
           DOCKERHUB_IMAGE="ne0lith/cdl-docker"
-          CURRENT_VERSION=$(curl -s https://hub.docker.com/v2/repositories/${DOCKERHUB_IMAGE}/tags?page_size=100 | jq -r '.results[].name' | grep -E '^[0-9]+\.[0-9]+\.[0-9]+$' | sort -V | tail -n 1)
+          LATEST_VERSION=${{ steps.get-version.outputs.latest_version }}
+          PYTHON_VERSIONS=("3.12" "3.13")
 
-          echo "Current version: $CURRENT_VERSION"
-          echo "Latest version: $LATEST_VERSION"
+          TAGS=$(curl -s "https://hub.docker.com/v2/repositories/${DOCKERHUB_IMAGE}/tags?page_size=100" | jq -r '.results[].name')
 
-          if [ "$CURRENT_VERSION" = "$LATEST_VERSION" ]; then
-            echo "No new release to publish."
-            echo "new_release=false" >> $GITHUB_OUTPUT
-          else
-            echo "New release detected!"
+          MISSING_TAGS=false
+
+          for PY_VER in "${PYTHON_VERSIONS[@]}"; do
+            TAG="${PY_VER}-${LATEST_VERSION}"
+            if echo "$TAGS" | grep -q "^${TAG}$"; then
+              echo "Tag $TAG already exists on Docker Hub."
+            else
+              echo "Tag $TAG is missing on Docker Hub."
+              MISSING_TAGS=true
+            fi
+          done
+
+          if [ "$MISSING_TAGS" = true ]; then
+            echo "New release detected: $LATEST_VERSION"
             echo "new_release=true" >> $GITHUB_OUTPUT
+          else
+            echo "No new release detected. Latest version $LATEST_VERSION is already on Docker Hub."
+            echo "new_release=false" >> $GITHUB_OUTPUT
           fi
 
   build-and-publish:
