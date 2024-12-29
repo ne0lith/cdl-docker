@@ -11,9 +11,11 @@ permissions:
   actions: write
 
 jobs:
-  build-and-publish:
+  check-release:
     runs-on: ubuntu-latest
-
+    outputs:
+      new_release: ${{ steps.check-release.outputs.new_release }}
+      latest_version: ${{ steps.get-version.outputs.latest_version }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -23,85 +25,89 @@ jobs:
         run: |
           LATEST_VERSION=$(curl -s https://pypi.org/pypi/cyberdrop-dl-patched/json | jq -r '.info.version')
           echo "Latest version: $LATEST_VERSION"
-          echo "CYBERDROP_DL_VERSION=$LATEST_VERSION" >> $GITHUB_ENV
+          echo "latest_version=$LATEST_VERSION" >> $GITHUB_OUTPUT
 
       - name: Check if release is new
         id: check-release
         run: |
           DOCKERHUB_IMAGE="ne0lith/cdl-docker"
-          CURRENT_VERSION=$(curl -s https://hub.docker.com/v2/repositories/${DOCKERHUB_IMAGE}/tags | jq -r '.results[].name' | grep -E '^[0-9]+\.[0-9]+\.[0-9]+$' | sort -V | tail -n 1)
+          CURRENT_VERSION=$(curl -s https://hub.docker.com/v2/repositories/${DOCKERHUB_IMAGE}/tags?page_size=100 | jq -r '.results[].name' | grep -E '^[0-9]+\.[0-9]+\.[0-9]+$' | sort -V | tail -n 1)
 
           echo "Current version: $CURRENT_VERSION"
-          echo "Latest version: $CYBERDROP_DL_VERSION"
+          echo "Latest version: $LATEST_VERSION"
 
-          if [ "$CURRENT_VERSION" = "$CYBERDROP_DL_VERSION" ]; then
+          if [ "$CURRENT_VERSION" = "$LATEST_VERSION" ]; then
             echo "No new release to publish."
-            echo "new_release=false" >> $GITHUB_ENV
-            exit 0
+            echo "new_release=false" >> $GITHUB_OUTPUT
           else
             echo "New release detected!"
-            echo "new_release=true" >> $GITHUB_ENV
-          fi
+            echo "new_release=true" >> $GITHUB_OUTPUT
 
-      - name: Stop if no new release
-        if: env.new_release == 'false'
-        run: |
-          echo "No new release. Exiting gracefully."
-          exit 0
+  build-and-publish:
+    needs: check-release
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [3.12, 3.13]
+    if: needs.check-release.outputs.new_release == 'true'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
 
       - name: Set up Docker Buildx
-        if: env.new_release == 'true'
         uses: docker/setup-buildx-action@v2
 
       - name: Log in to Docker Hub
-        if: env.new_release == 'true'
         uses: docker/login-action@v2
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
       - name: Log in to GitHub Container Registry
-        if: env.new_release == 'true'
         uses: docker/login-action@v2
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build and push versioned Docker image
-        if: env.new_release == 'true'
+      - name: Build and push Docker image
         run: |
           DOCKERHUB_IMAGE="ne0lith/cdl-docker"
           GHCR_IMAGE="ghcr.io/${{ github.repository_owner }}/cdl-docker"
+          PYTHON_VERSION=${{ matrix.python-version }}
+          LATEST_VERSION=${{ needs.check-release.outputs.latest_version }}
 
           docker buildx build \
             --platform linux/amd64,linux/arm64 \
-            --build-arg CYBERDROP_DL_VERSION=$CYBERDROP_DL_VERSION \
-            --tag $DOCKERHUB_IMAGE:$CYBERDROP_DL_VERSION \
-            --tag $GHCR_IMAGE:$CYBERDROP_DL_VERSION \
+            --build-arg CYBERDROP_DL_VERSION=$LATEST_VERSION \
+            --build-arg PYTHON_VERSION=$PYTHON_VERSION \
+            --tag $DOCKERHUB_IMAGE:${PYTHON_VERSION}-${LATEST_VERSION} \
+            --tag $GHCR_IMAGE:${PYTHON_VERSION}-${LATEST_VERSION} \
             --push .
 
-      - name: Push latest Docker tag
-        if: env.new_release == 'true'
+      - name: Push latest Docker tag (only for Python 3.12)
+        if: matrix.python-version == '3.12'
         run: |
           DOCKERHUB_IMAGE="ne0lith/cdl-docker"
           GHCR_IMAGE="ghcr.io/${{ github.repository_owner }}/cdl-docker"
+          PYTHON_VERSION=${{ matrix.python-version }}
+          LATEST_VERSION=${{ needs.check-release.outputs.latest_version }}
 
+          # Tag and push as 'latest' only for Python 3.12
           docker buildx build \
             --platform linux/amd64,linux/arm64 \
-            --build-arg CYBERDROP_DL_VERSION=$CYBERDROP_DL_VERSION \
+            --build-arg CYBERDROP_DL_VERSION=$LATEST_VERSION \
+            --build-arg PYTHON_VERSION=$PYTHON_VERSION \
             --tag $DOCKERHUB_IMAGE:latest \
             --tag $GHCR_IMAGE:latest \
             --push .
 
-
       - name: Notify Discord
-        if: env.new_release == 'true'
         run: |
           DISCORD_WEBHOOK_URL=${{ secrets.DISCORD_WEBHOOK_URL }}
-          LATEST_VERSION=$CYBERDROP_DL_VERSION
+          LATEST_VERSION=${{ needs.check-release.outputs.latest_version }}
+          PYTHON_VERSION=${{ matrix.python-version }}
 
           curl -X POST -H "Content-Type: application/json" \
-          -d "{\"content\": \"✅ New Docker image build pushed! Version: $LATEST_VERSION\"}" \
+          -d "{\"content\": \"✅ New Docker image build pushed! Python version: $PYTHON_VERSION, Version: $LATEST_VERSION\"}" \
           $DISCORD_WEBHOOK_URL
-
