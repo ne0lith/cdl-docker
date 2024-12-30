@@ -30,7 +30,7 @@ jobs:
       - name: Check if release is new
         id: check-release
         run: |
-          set -e  # Exit immediately if a command exits with a non-zero status
+          set -e
           DOCKERHUB_IMAGE="ne0lith/cdl-docker"
           LATEST_VERSION=${{ steps.get-version.outputs.latest_version }}
           PYTHON_VERSIONS=("3.12" "3.13")
@@ -55,7 +55,7 @@ jobs:
           else
             echo "No new release detected. Latest version $LATEST_VERSION is already on Docker Hub."
             echo "new_release=false" >> $GITHUB_OUTPUT
-            exit 0  # Explicitly exit the step gracefully
+            exit 0
           fi
 
   build-and-publish:
