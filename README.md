@@ -42,8 +42,6 @@ services:
     # stdin_open: true
     # tty: true
     # You can override the default command by changing the following line
-    # The default command is: ["cyberdrop-dl", "--config", "Default", "--download"]
-    # To add or change parameters, modify the command below:
     command: ["cyberdrop-dl"]
 ```
 
@@ -67,7 +65,5 @@ services:
     # stdin_open: true
     # tty: true
     # You can override the default command by changing the following line
-    # The default command is: ["cyberdrop-dl", "--config", "Default", "--download"]
-    # To add or change parameters, modify the command below:
     command: ["cyberdrop-dl"]
 ```
