@@ -33,37 +33,21 @@ jobs:
           set -e
           DOCKERHUB_IMAGE="ne0lith/cdl-docker"
           LATEST_VERSION=${{ steps.get-version.outputs.latest_version }}
-          PYTHON_VERSIONS=("3.12" "3.13")
 
           TAGS=$(curl -s "https://hub.docker.com/v2/repositories/${DOCKERHUB_IMAGE}/tags?page_size=100" | jq -r '.results[].name')
 
-          MISSING_TAGS=false
-
-          for PY_VER in "${PYTHON_VERSIONS[@]}"; do
-            TAG="${PY_VER}-${LATEST_VERSION}"
-            if echo "$TAGS" | grep -q "^${TAG}$"; then
-              echo "Tag $TAG already exists on Docker Hub."
-            else
-              echo "Tag $TAG is missing on Docker Hub."
-              MISSING_TAGS=true
-            fi
-          done
-
-          if [ "$MISSING_TAGS" = true ]; then
-            echo "New release detected: $LATEST_VERSION"
-            echo "new_release=true" >> $GITHUB_OUTPUT
-          else
+          if echo "$TAGS" | grep -q "^${LATEST_VERSION}$"; then
             echo "No new release detected. Latest version $LATEST_VERSION is already on Docker Hub."
             echo "new_release=false" >> $GITHUB_OUTPUT
             exit 0
+          else
+            echo "New release detected: $LATEST_VERSION"
+            echo "new_release=true" >> $GITHUB_OUTPUT
           fi
 
   build-and-publish:
     needs: check-release
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        python-version: [3.12, 3.13]
     if: needs.check-release.outputs.new_release == 'true'
     steps:
       - name: Checkout code
@@ -89,30 +73,25 @@ jobs:
         run: |
           DOCKERHUB_IMAGE="ne0lith/cdl-docker"
           GHCR_IMAGE="ghcr.io/${{ github.repository_owner }}/cdl-docker"
-          PYTHON_VERSION=${{ matrix.python-version }}
           LATEST_VERSION=${{ needs.check-release.outputs.latest_version }}
 
           docker buildx build \
             --platform linux/amd64,linux/arm64 \
             --build-arg CYBERDROP_DL_VERSION=$LATEST_VERSION \
-            --build-arg PYTHON_VERSION=$PYTHON_VERSION \
-            --tag $DOCKERHUB_IMAGE:${PYTHON_VERSION}-${LATEST_VERSION} \
-            --tag $GHCR_IMAGE:${PYTHON_VERSION}-${LATEST_VERSION} \
+            --tag $DOCKERHUB_IMAGE:${LATEST_VERSION} \
+            --tag $GHCR_IMAGE:${LATEST_VERSION} \
             --push .
 
-      - name: Push latest Docker tag (only for Python 3.12)
-        if: matrix.python-version == '3.12'
+      - name: Push latest Docker tag
         run: |
           DOCKERHUB_IMAGE="ne0lith/cdl-docker"
           GHCR_IMAGE="ghcr.io/${{ github.repository_owner }}/cdl-docker"
-          PYTHON_VERSION=${{ matrix.python-version }}
           LATEST_VERSION=${{ needs.check-release.outputs.latest_version }}
 
-          # Tag and push as 'latest' only for Python 3.12
+          # Tag and push as 'latest'
           docker buildx build \
             --platform linux/amd64,linux/arm64 \
             --build-arg CYBERDROP_DL_VERSION=$LATEST_VERSION \
-            --build-arg PYTHON_VERSION=$PYTHON_VERSION \
             --tag $DOCKERHUB_IMAGE:latest \
             --tag $GHCR_IMAGE:latest \
             --push .
@@ -121,8 +100,7 @@ jobs:
         run: |
           DISCORD_WEBHOOK_URL=${{ secrets.DISCORD_WEBHOOK_URL }}
           LATEST_VERSION=${{ needs.check-release.outputs.latest_version }}
-          PYTHON_VERSION=${{ matrix.python-version }}
 
           curl -X POST -H "Content-Type: application/json" \
-          -d "{\"content\": \"✅ New Docker image build pushed! Python version: $PYTHON_VERSION, Version: $LATEST_VERSION\"}" \
+          -d "{\"content\": \"✅ New Docker image build pushed! Version: $LATEST_VERSION\"}" \
           $DISCORD_WEBHOOK_URL
