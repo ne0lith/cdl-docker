@@ -27,12 +27,19 @@ jobs:
           echo "Latest version: $LATEST_VERSION"
           echo "latest_version=$LATEST_VERSION" >> $GITHUB_OUTPUT
 
-      - name: Check if release is new
+      - name: Check if release is new or forced
         id: check-release
         run: |
           set -e
           DOCKERHUB_IMAGE="ne0lith/cdl-docker"
           LATEST_VERSION=${{ steps.get-version.outputs.latest_version }}
+          FORCE_BUILD=${{ secrets.FORCE_BUILD }}
+
+          if [ "$FORCE_BUILD" = "true" ]; then
+            echo "Force build enabled, skipping release check."
+            echo "new_release=true" >> $GITHUB_OUTPUT
+            exit 0
+          fi
 
           TAGS=$(curl -s "https://hub.docker.com/v2/repositories/${DOCKERHUB_IMAGE}/tags?page_size=100" | jq -r '.results[].name')
 
