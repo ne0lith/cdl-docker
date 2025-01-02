@@ -19,8 +19,8 @@ docker pull ne0lith/cdl-docker:latest
 ```
 docker run -it \
   --name cdl-docker \
-  -v /path/to/AppData:/cyberdrop-dl/AppData \
-  -v /path/to/Downloads:/cyberdrop-dl/Downloads \
+  -v $(pwd)/AppData:/cyberdrop-dl/AppData \
+  -v $(pwd)/Downloads:/cyberdrop-dl/Downloads \
   ne0lith/cdl-docker:latest \
   cyberdrop-dl
 ```
