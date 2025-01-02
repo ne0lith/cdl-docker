@@ -17,7 +17,7 @@ docker pull ne0lith/cdl-docker:latest
 ## Docker run command
 
 ```
-docker run -d \
+docker run -it \
   --name cdl-docker \
   -v /path/to/AppData:/cyberdrop-dl/AppData \
   -v /path/to/Downloads:/cyberdrop-dl/Downloads \
@@ -38,9 +38,8 @@ services:
       - /path/to/AppData:/cyberdrop-dl/AppData
       - /path/to/Downloads:/cyberdrop-dl/Downloads
     restart: no
-    # Uncomment stdin_open, and tty if you'd like to be able to attach to this container to see output in real time
-    # stdin_open: true
-    # tty: true
+    stdin_open: true
+    tty: true
     # You can override the default command by changing the following line
     command: ["cyberdrop-dl"]
 ```
@@ -61,9 +60,8 @@ services:
       - /path/to/nas/Appdata/Configs:/cyberdrop-dl/AppData/Configs
       - /path/to/nas/Downloads:/cyberdrop-dl/Downloads
     restart: no
-    # Uncomment stdin_open, and tty if you'd like to be able to attach to this container to see output in real time
-    # stdin_open: true
-    # tty: true
+    stdin_open: true
+    tty: true
     # You can override the default command by changing the following line
     command: ["cyberdrop-dl"]
 ```
