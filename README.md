@@ -72,3 +72,13 @@ In situations where you need the daemon to be run as a different user, specify a
 
 - In `docker run` commands, you can specify the user like this: `--user 1000:1000`
 - In `docker-compose.yml` files, you can specify the user like this: `user: ${FIXUID:-1000}:${FIXGID:-1000}`
+
+## Web TTY
+
+Support for headless operation with UI via the web is available via [gotty](https://github.com/sorenisanerd/gotty). Configuration via env, most common options:
+
+- `GOTTY=true` to enable
+- `GOTTY_PORT=6969`
+- `GOTTY_CREDENTIAL=user:pass`
+
+See [gotty docs](https://github.com/sorenisanerd/gotty/#options) for additional options, including tls.
