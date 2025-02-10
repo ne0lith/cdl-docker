@@ -65,3 +65,10 @@ services:
     # You can override the default command by changing the following line
     command: ["cyberdrop-dl"]
 ```
+
+## Running as a different user
+
+In situations where you need the daemon to be run as a different user, specify a user/group in your `docker run` or `docker-compose.yml` file to run as a different user. [fixuid](https://github.com/boxboat/fixuid) will handle it at runtime.
+
+- In `docker run` commands, you can specify the user like this: `--user 1000:1000`
+- In `docker-compose.yml` files, you can specify the user like this: `user: ${FIXUID:-1000}:${FIXGID:-1000}`
