@@ -6,7 +6,7 @@ WORKDIR /cyberdrop-dl
 
 ENV PYTHONUNBUFFERED=1
 RUN pip install --no-cache-dir --upgrade pip \
-    && pip install --no-cache-dir cyberdrop-dl-patched==${CYBERDROP_DL_VERSION}
+    && pip install --no-cache-dir cyberdrop-dl-patched${CYBERDROP_DL_VERSION:+\=\=${CYBERDROP_DL_VERSION}}
 
 COPY . .
 
