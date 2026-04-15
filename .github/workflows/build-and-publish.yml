@@ -18,7 +18,7 @@ jobs:
       latest_version: ${{ steps.get-version.outputs.latest_version }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Fetch latest version from PyPI
         id: get-version
@@ -58,7 +58,7 @@ jobs:
     if: needs.check-release.outputs.new_release == 'true'
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
